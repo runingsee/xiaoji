@@ -13,7 +13,7 @@
 #   - 管理通道仅云控制台网页终端（VNC/OrcaTerm），SSH 已移除
 set -euo pipefail
 
-REPO_URL="${1:-git@github.com:runingsee/xiaoji.git}"
+REPO_URL="${1:-git@github.com:runingsee/xiaoji.git}"   # 默认即本仓库
 BRANCH="${2:-master}"
 HOME_DIR="${XIAOJI_HOME:-$HOME/xiaoji}"
 SRC_DIR="$HOME_DIR/src"
