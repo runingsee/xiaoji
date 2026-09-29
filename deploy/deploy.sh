@@ -173,18 +173,35 @@ PrivateTmp=true
 WantedBy=default.target
 UNIT
 
-log "安装 systemd unit（用户级，无需 root）"
-mkdir -p ~/.config/systemd/user
-cp "$HOME_DIR/xiaoji.service" ~/.config/systemd/user/xiaoji.service
-systemctl --user daemon-reload
-systemctl --user enable xiaoji >/dev/null 2>&1 || true
-
-# linger：保证未登录 SSH/终端时服务也能随系统启动
+# ----------------------------------------------------------------
+# 用户级 systemd 总线引导
+# 云控制台网页终端（VNC/OrcaTerm）不是标准登录会话：
+#   - 没有 XDG_RUNTIME_DIR / DBUS_SESSION_BUS_ADDRESS
+#   - systemctl --user 报 Failed to connect to bus: No such file or directory
+# 解法：先 loginctl enable-linger（创建 /run/user/<uid> 用户管理器与 bus 套接字），
+#       再显式补环境变量，顺序不能反（之前 linger 排在 systemctl 之后导致本错误）。
+# ----------------------------------------------------------------
+log "启用 linger 并引导用户级 systemd 总线"
+# loginctl enable-linger：系统启动时即拉起用户管理器，无需登录
 if sudo loginctl enable-linger "$(whoami)" 2>/dev/null; then
   log "linger 已启用（无需登录，服务随系统启动）"
 else
   log "linger 启用失败，请手动执行：sudo loginctl enable-linger $(whoami)"
 fi
+export XDG_RUNTIME_DIR="/run/user/$(id -u)"
+export DBUS_SESSION_BUS_ADDRESS="unix:path=${XDG_RUNTIME_DIR}/bus"
+mkdir -p "$XDG_RUNTIME_DIR" && chmod 700 "$XDG_RUNTIME_DIR" 2>/dev/null || true
+for i in $(seq 1 10); do
+  [ -S "${XDG_RUNTIME_DIR}/bus" ] && { log "用户总线就绪：${XDG_RUNTIME_DIR}/bus"; break; }
+  sleep 1
+done
+[ -S "${XDG_RUNTIME_DIR}/bus" ] || log "警告：10 秒内未等到 ${XDG_RUNTIME_DIR}/bus，systemctl --user 可能仍不可用"
+
+log "安装 systemd unit（用户级，无需 root）"
+mkdir -p ~/.config/systemd/user
+cp "$HOME_DIR/xiaoji.service" ~/.config/systemd/user/xiaoji.service
+systemctl --user daemon-reload
+systemctl --user enable xiaoji >/dev/null 2>&1 || true
 
 systemctl --user restart xiaoji
 
