@@ -1,0 +1,36 @@
+# ---- .NET ----
+bin/
+obj/
+*.user
+*.suo
+.vs/
+TestResults/
+
+# ---- Node / 前端 ----
+node_modules/
+dist/
+.vite/
+*.local
+
+# ---- 配置与密钥（严禁入库） ----
+server/appsettings.json
+server/appsettings.*.local.json
+appsettings.Production.json
+.env
+.env.*
+!.env.example
+
+# ---- 发布产物 ----
+publish/
+app/
+backups/
+*.sql.gz
+*.log
+
+# ---- 工具运行时状态 ----
+.omo/
+
+# ---- 编辑器 ----
+.idea/
+*.swp
+.DS_Store
