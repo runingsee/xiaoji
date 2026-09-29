@@ -1,0 +1,28 @@
+# 晓记 · systemd 服务单元
+# 放置: /etc/systemd/system/xiaoji.service
+# 路径按实际发布目录修改
+
+[Unit]
+Description=Xiaoji (晓记) web service
+After=network.target mysql.service
+Wants=mysql.service
+
+[Service]
+Type=simple
+User=www-data
+Group=www-data
+WorkingDirectory=/opt/xiaoji/app
+ExecStart=/opt/xiaoji/app/Huamishu.Api --urls http://127.0.0.1:5000 --environment Production
+Restart=always
+RestartSec=3
+# 2G 机器上限制单进程内存，防泄漏拖垮整机
+MemoryMax=700M
+Environment=DOTNET_EnableDiagnostics=0
+Environment=ASPNETCORE_ENVIRONMENT=Production
+# 轻量加固：禁止提权 + 只读根文件系统（仅 /tmp 可写，供 .NET 临时文件使用）
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=full
+
+[Install]
+WantedBy=multi-user.target
