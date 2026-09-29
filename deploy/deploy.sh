@@ -25,6 +25,14 @@ BACKUP_KEEP=3
 log()  { echo "[deploy] $*"; }
 fail() { echo "[deploy] 错误：$*" >&2; exit 1; }
 
+# 自举：dotnet 装在 ~/.dotnet（无 root 安装），非交互 shell 不读 .bashrc，
+# 这里显式把 ~/.dotnet 补进 PATH / DOTNET_ROOT，避免 command -v dotnet 直接失败
+if ! command -v dotnet >/dev/null 2>&1 && [ -x "$HOME/.dotnet/dotnet" ]; then
+  export PATH="$HOME/.dotnet:$PATH"
+  export DOTNET_ROOT="$HOME/.dotnet"
+  log "已自动补环境变量：PATH 含 ~/.dotnet，DOTNET_ROOT=$DOTNET_ROOT"
+fi
+
 # ================================================================ 前置检查
 log "=== 前置检查 ==="
 
@@ -149,6 +157,9 @@ Wants=docker.service
 [Service]
 Type=simple
 WorkingDirectory=$APP_DIR
+# dotnet 装于 ~/.dotnet（无 root 安装），systemd 进程不读 .bashrc，必须显式注入
+Environment=PATH=$HOME/.dotnet:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+Environment=DOTNET_ROOT=$HOME/.dotnet
 ExecStart=$APP_DIR/Huamishu.Api --urls http://0.0.0.0:$LISTEN_PORT --environment Production
 Restart=always
 RestartSec=3
